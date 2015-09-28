@@ -1,0 +1,403 @@
+
+%%%%%%%%%%%%%%%%%%%%%%% file typeinst.tex %%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This is the LaTeX source for the instructions to authors using
+% the LaTeX document class 'llncs.cls' for contributions to
+% the Lecture Notes in Computer Sciences series.
+% http://www.springer.com/lncs       Springer Heidelberg 2006/05/04
+%
+% It may be used as a template for your own input - copy it
+% to a new file with a new name and use it as the basis
+% for your article.
+%
+% NB: the document class 'llncs' has its own and detailed documentation, see
+% ftp://ftp.springer.de/data/pubftp/pub/tex/latex/llncs/latex2e/llncsdoc.pdf
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass[runningheads,a4paper]{llncs}
+
+\usepackage{amssymb}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+\usepackage{url}
+\urldef{\mailsa}\path|{harshjtrivedi94, ptl.aanal, prasenjit.majumder }@gmail.com|     
+\newcommand{\keywords}[1]{\par\addvspace\baselineskip
+\noindent\keywordname\enspace\ignorespaces#1}
+
+\usepackage{latexsym}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{ragged2e}
+\usepackage{multicol}
+\usepackage{verbatim}
+\usepackage{fontspec}
+\usepackage[utf8]{inputenc}
+\bibliographystyle{splncs03}
+\usepackage{float}
+
+\newfontfamily{\Guja}[Script=Gujarati]{Shruti.ttf}
+\setlist{nosep} 
+\newcolumntype{S}{>{\centering\arraybackslash}m{3.3cm}}
+\newcolumntype{F}{>{\centering\arraybackslash}m{2.1cm}}
+\newcolumntype{X}{>{\centering\arraybackslash}m{1.8cm}}
+\newcolumntype{L}{>{\centering\arraybackslash}m{1.2cm}}
+\newcolumntype{M}{>{\centering\arraybackslash}m{0.8cm}}
+\DeclareMathOperator{\adashb}{a-b}
+\DeclareMathOperator{\dash}{-}
+
+\begin{document}
+
+\mainmatter  % start of an individual contribution
+
+% first the title is needed
+\title{A New Approach to Syllabification \\ of Words in Gujarati}
+
+% a short form should be given in case it is too long for the running head
+\titlerunning{A New Approach to Syllabification of Words in Gujarati}
+
+% the name(s) of the author(s) follow(s) next
+%
+% NB: Chinese authors should write their first names(s) in front of
+% their surnames. This ensures that the names appear correctly in
+% the running heads and the author index.
+%
+\author{ Harsh Trivedi \and Aanal Patel \and Prasenjit Majumder }
+%
+\authorrunning{ H. Trivedi \and A. Patel \and P. Majumder }
+% (feature abused for this document to repeat the title also on left hand pages)
+
+% the affiliations are given next; don't give your e-mail address
+% unless you accept that it will be published
+\institute{Dhirubhai Ambani Institute of Information and Communication Technology,\\
+Gandhinagar, India\\
+\mailsa\\
+\url{http://daiict.ac.in}
+}
+
+%
+% NB: a more complex sample for affiliations and the mapping to the
+% corresponding authors can be found in the file "llncs.dem"
+% (search for the string "\mainmatter" where a contribution starts).
+% "llncs.dem" accompanies the document class "llncs.cls".
+%
+
+%\toctitle{A New Approach to Syllabification of Words in Gujarati}
+%\tocauthor{ Harsh Trivedi \and Aanal Patel \and Prasenjit Majumder }
+\maketitle
+
+
+\begin{abstract}
+This paper presents a statistical approach for automatic syllabification of words in Gujarati. Gujarati is a resource poor language and hardly any work for its syllabification has been reported, to the best our knowledge. Specifically, lack of enough training data makes this task difficult to perform. A training corpus of 14 thousand Gujarati words is built and a new approach to syllabification in Gujarati is tested on it. The maximum word and syllable level accuracies achieved are 91.89\% and 98.02\% respectively.
+\keywords{ Syllabification Gujarati CRF}
+\end{abstract}
+
+\section{Introduction}
+\label{section:introduction}
+This paper explains in detail a supervised system developed to split words written in Gujarati into its constituent syllables. This process of word syllabification has important applications in real world text processing. It plays an important role in speech synthesis and recognition ~\cite{kiraz1998multilingual} and is required for effective text-to-speech (TTS) systems. It is useful in calculating readability indices like Flesh Kincaid, Gunning Fox and SMOG, which require to count the number of syllables in the word. Besides, because of the dynamic nature of any language, a dictionary look-up for syllabification can never suffice. Even more, there is hardly any digital resource for word syllabification in Gujarati. And that is why, to address above mentioned problem an automated system to syllabify Gujarati words can be of immense use.
+
+Many efforts for syllabification in various languages have already been made. Generic principles of the syllabification include Maximum Onset Principle ~\cite{kahn1976syllable}, Legality Principle ~\cite{goslin2001comparison} and Sonority Principle ~\cite{selkirk1984major}. A 99\% efficient statistical approach syllabification was proposed by Mayer ~\cite{mayer2010toward}, which involved counting of the syllables in order know about the best split possible. Hammond \cite{hammond1997parsing} showed how to use Optimality Theory for effective syllabification. Another approach demonstrated a discriminative approach that uses Support Vector Machine and Hidden Markov Model together for syllabification with 99.9\% and 99.4\% accuracies in English and German respectively ~\cite{bartlett2009syllabification}. Conditional Random Fields have also been used for syllabification ~\cite{crf_automatic_syllabification}. All these approaches have been predominantly demonstrated in English and European languages.
+
+To the best of our knowledge, no text based data-driven approach has been done on Gujarati and hence this paper attempts to make effort in this direction.
+
+The paper is organized as follows. Section \ref{section:data_collection} describes the process of data collection and talks about CRF approach adapted for Gujarati, used for bootstrapping data. Section \ref{section:our_approach} details on our probabilistic approach for syllabification of Gujarati words. Section \ref{section:evaluation} elaborates on evaluation details. Conclusion and future scopes are described in section \ref{section:conclusion_and_future_scope}.
+
+The system input and output examples are shown in Table \ref{table:input_output_examples} with symbol (``hyphen'') denoting the syllabic break. Transliteration to English is shown for the purpose of readability. They are not part of the input or output of the system.
+
+
+\begin{table}[H]
+\caption{Input / Output examples}
+\centering
+\begin{tabular}{SS}
+\hline\noalign{\smallskip}
+  \bf Input     & \bf Output         \\
+\noalign{\smallskip}
+\hline
+\noalign{\smallskip}  {\Guja{ખજૂર}} \emph{/khajur/} & {\Guja{ખ-જૂર}} \emph{/kha-jur/}     \\\hline
+\noalign{\smallskip}  {\Guja{હોળી}} \emph{/holi/} & {\Guja{હો-ળી}} \emph{/ho-li/}    \\\hline
+\end{tabular}
+\label{table:input_output_examples}
+\end{table}
+
+
+\section{Data Collection }
+\label{section:data_collection}
+
+Six thousand words and their syllabification were collected from “Babu Suthar’s Gujarati dictionary” \cite{babusuthar}. For expanding the corpus to more words, an iterative bootstrapping model was used. Two iterations were conducted and suggestions of 4 thousand words in each iteration were generated using CRF based trained model. These suggestions were rectified by a Gujarati linguist and were added back to training data. The new 4 thousand words selected in each iteration were taken as the most frequently occurring words from a Gujarati newspaper corpus ~\cite{DBLP:conf/fire/PalchowdhuryMPBM11}. For rectification of faulty suggestions, an online interface was made and was provided to a language expert to make this process faster. As a result, a corpus of about 14 thousand word syllabifications had been generated.
+
+
+
+\subsection{Using Conditional Random Fields to Bootstrap Data}
+\label{subsection:using_conditional_random_fields_to_bootstrap_data}
+
+Modeling the problem of automatic syllabification as sequential tagging problem and usage of Conditional Random Fields ~\cite{lafferty2001conditional} for the same has been done before. These approaches have been well demonstrated in languages following Roman script ~\cite{crf_roman_syllabification}, ~\cite{crf_automatic_syllabification}, ~\cite{crf_word_hyphenation}. The method involves learning to predict the sequence of output labels (syllabic break or not prior/post character) by taking as input sequence of characters of word and their respective feature set.
+
+In our implementation, each character in the word is labeled `S' if it marks the beginning of the syllable and `F' otherwise. For example, for the syllabification `{\Guja{શુ-ભેચ્-છા}}', sequential tags would be: {\Guja{શ}}(S),  {\Guja{ુ}}(F), {\Guja{ભ}}(S), {\Guja{ે}}(F), {\Guja{ચ}}(F), {\Guja{્}}(F), {\Guja{છ}}(S), {\Guja{ા}}(F).  The software that we use as an implementation of Conditional Random Fields is CRF++ \cite{crfpp}.
+
+Unlike Roman script, Gujarati alphabet can be categorized in vowels, consonants and \emph{matras}. \emph{Matras} sound like vowel, but they do not exist isolated. They represent vowel-like sounds that are preceded by consonant. As observed, these set of characters play an important role in deciding position of syllabic breaks and hence are included in feature vector for CRF. 
+
+\noindent For feature vector for each character, categorization was done as follows:
+\begin{itemize} \itemsep1pt \parskip0pt 
+  \parsep0pt
+  \item \textbf{Vowels:} \{ {\Guja {અ, આ, ઇ, ઈ, ઉ, ઊ, એ, ઍ, ઐ, ઓ, ઑ, ઔ, અં       }}   \}
+  \item \textbf{Consonants:} \{  {\Guja {ક, ખ, ગ, ઘ, ચ, છ, જ, ઝ, ટ, ઠ, ડ, ઢ, ત, થ, દ, ધ, ન, પ, ફ, બ, ભ, મ, ય, ર, લ, વ, શ, સ, ષ, હ, ળ, ક્ષ, જ્ઞ   } }\}
+  \item \textbf{Matras:} \{ {\Guja{\ ા, િ, ી, ુ, ૂ, ે, ૅ,  ૈ, ો, ૉ,  ૌ, ં, ્, ૃ, ૄ,  ઁ,  ં,  ઃ ,  ઼,  ઽ               }} \}
+\end{itemize}
+
+\begin{table}[H]
+\caption{ Combinations of context features tried }
+\centering
+\begin{tabular}{ccc}\hline
+\noalign{\smallskip}  \bf \begin{small} context window \end{small} & \bf \begin{small} character n-grams \end{small}& \bf \begin{small} total context features \end{small} \\ \noalign{\smallskip}   \hline
+\noalign{\smallskip}  \begin{small} -1 to 1 \end{small}  & \begin{small} 1 to 3 \end{small} & \begin{small} 6  \end{small} \\\hline
+\noalign{\smallskip}  \begin{small} -2 to 2 \end{small}  & \begin{small} 1 to 5 \end{small} & \begin{small} 15 \end{small} \\\hline
+\noalign{\smallskip}  \begin{small} -3 to 3 \end{small}  & \begin{small} 1 to 7 \end{small} & \begin{small} 28 \end{small} \\\hline
+\noalign{\smallskip}  \begin{small} -4 to 4 \end{small}  & \begin{small} 1 to 9 \end{small} & \begin{small} 45 \end{small} \\\hline
+\noalign{\smallskip}  \begin{small} -5 to 5 \end{small}  & \begin{small} 1 to 11 \end{small} & \begin{small} 66 \end{small} \\\hline
+  \end{tabular}
+\label{table:combinations_of_context_features_tried}
+\end{table}
+
+\noindent For example, for context window -1 to 1 : \{ w[-1], w[0], w[1], w[-1]/w[0], w[0]/w[1], w[-1]/w[0]/w[1] \} are taken as context features. Context window of -3 to +3 with character 1-gram to 7-grams used as context features turn out to give best results. No significant gain was achieved there-after by increasing context features. 
+
+\section{Our Approach}
+\label{section:our_approach}
+
+The sub-section \ref{subsection:predicting_maximum_probable_syllabification} describes a probabilistic model for syllabification, while the sub-section \ref{subsection:predicting_first_and_last_syllable} describes an add-on method that when applied prior to the former method, contributes to improve the overall performance.
+
+\subsection{Predicting Maximum Probable syllabification}
+\label{subsection:predicting_maximum_probable_syllabification}
+
+This approach focuses on statistically predicting the most probable syllabification from all the possible syllabifications of a word. It attempts to calculate the probability of each of the possible syllabification being correct and chooses the one with maximum probability. A word with n characters, can theoretically have $2^{n-1}$ possibilities of syllabification owing to n-1 positions where a `-' can be kept. However, increasing word size increases search space exponentially. Hence, an assumption is taken considering the language constructs to reduce the search space.
+
+It was observed\footnote{Assumption verified and corrected by a Gujarati linguist} that the Gujarati speakers always pronounce the \emph{matra} along with the preceding consonant or vowel. Hence, an \textbf{assumption} was made, that a vowel or a consonant along with all its subsequently occurring \emph{matra’s} would always fall into the same syllable, eliminating the possibility of break between them.
+
+Using this assumption, a word can be broken down into \textbf{units}, each unit being unbreakable any further. For example, {\Guja{શુભેચ્છા}} (in Unicode: `{\Guja{શ}}\nobreak\hspace{.05em}{\Guja{ુ}}\nobreak\hspace{.05em}{\Guja{ભ}}\nobreak\hspace{.05em}{\Guja{ે}}\nobreak\hspace{.05em}{\Guja{ચ}}\nobreak\hspace{.05em}{\Guja{્}}\nobreak\hspace{.05em}{\Guja{છ}}\nobreak\hspace{.05em}{\Guja{ા}}' ) /\emph{shubhechcha}/, the units of this words are:
+
+\begin{multicols}{2}
+\begin{itemize}[noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt]
+  \parsep0pt
+    \item {\Guja{શુ}} ({\Guja{શ}}+{\Guja{ુ}}) /\emph{shu}/
+    \item {\Guja{ભે}} ({\Guja{ભ}}+{\Guja{ે}}) /\emph{bhe}/
+    \item {\Guja{ચ્}} ({\Guja{ચ}}+{\Guja{્}}) /\emph{ch}/
+    \item {\Guja{છા}} ({\Guja{છ}}+{\Guja{ા}}) /\emph{chha}/
+\end{itemize}
+\end{multicols}
+
+and the possible syllabifications ($2^{4-1}$) are:
+
+\begin{multicols}{2}
+\begin{itemize} \itemsep0pt \parskip0pt 
+  \parsep0pt
+  \item {\Guja{શુ-ભે-ચ્-છા}}
+  \item {\Guja{શુભે-ચ્-છા }}
+  \item {\Guja{શુ-ભેચ્-છા}}
+  \item {\Guja{શુભેચ્-છા }}
+  \item {\Guja{શુ-ભે-ચ્છા}}
+  \item {\Guja{શુભે-ચ્છા }}
+  \item {\Guja{શુ-ભેચ્છા}}
+  \item {\Guja{શુભેચ્છા }}
+\end{itemize}
+\end{multicols}
+
+\subsubsection*{Computing Scores: }
+
+Let word(W) be composed of n units, $W = u_1.u_2 ... u_n $ and let $S_i$ be the candidate syllabification to calculate the score for. $S_i$ would be composed of same units as word(W) but with `-' (syllabic break) present between 2 consecutive units. Hence for test syllabification $S_i$, we can define a set:
+
+\begin{equation}
+Pairs(S_i)=\{ X_i| X_i = u_{i}u_{i+1}
+\ or \ 
+u_{i} \dash u_{i+1} \}
+\end{equation}
+
+where,
+
+\begin{small}
+$u_{i}u_{i+1}$ indicates absence of syllabic break between units $u_i$ and $u_{i+1}$
+\end{small}
+
+\begin{small}
+$u_{i} \dash u_{i+1}$ indicates presence of syllabic break between units $u_i$ and $u_{i+1}$
+\end{small}
+
+and using it, probability of $S_i$ being the correct syllabification is approximated as the product of probabilities of having a break or no break at each possible place:
+
+\begin{equation}
+P(S_i)\ \approx\ \prod\limits_{X_i\ \in\ Pairs(S_i)} P(\ X_i\ )
+\end{equation}
+
+where,
+
+\begin{equation}
+P(X_i=``ab")=
+\begin{cases}
+\frac{N_s(``ab")}{N_w(``ab")} & \mbox{if } N_w(``ab") \neq 0\\
+0.5              & \mbox{otherwise}
+\end{cases}
+\end{equation}
+
+\begin{equation}
+P(X_i=``\adashb")=
+\begin{cases}
+\frac{N_s(``\adashb")}{N_w(``ab")} & \mbox{if } N_w(``ab") \neq 0\\
+0.5              & \mbox{otherwise}
+\end{cases}
+\end{equation}
+
+\begin{small}
+$N_s(X)$=Number of syllabification containing expression X from training corpus
+\end{small}
+
+
+\begin{small}
+$N_w(X)$=Number of words containing expression X from training corpus
+\end{small}
+
+\noindent For example,
+
+\begin{center}
+\noindent P({\Guja{શુભે-ચ્છા}}) $\approx$ P({\Guja{શુભે}}) $\times$ P({\Guja{ભે-ચ્}}) $\times$ P({\Guja{ચ્છા}})
+\end{center}
+
+Finally out of all possible syllabification which does not contain any illegal syllable\footnote{illegal syllables are the character sequences which do not occur as syllable in training data}, one with the maximum score is chosen.
+
+
+\subsection{Predicting First and Last syllable}
+\label{subsection:predicting_first_and_last_syllable}
+
+Some character sequences when occur at beginning or ending of a word are always spoken separately from the word and hence form first or last syllables of that word respectively. The idea behind this can be understood more in English context. For example, `non', `un', `ex' are common prefixes \footnote{any reference to prefix and suffix in this paper henceforth would refer to first and last syllable of the word respectively} and `ism', `ist', `less', `ness' are common suffixes in English which when occur at beginning / ending of a word, always form first and last syllables of word respectively. A similar pattern is followed in Gujarati also. `{\Guja{શ્રી}}', `{\Guja{બિન}}' and `{\Guja{લીન}}', `{\Guja{રણ}}' are examples of common prefixes and suffixes respectively in Gujarati.
+
+Instead of feeding system with static prefixes and suffixes, an attempt was made to make supervised model that learns about the important prefix and suffix from the given training data, which when appear at beginning / ending of the word, must be the first and last syllable of the word respectively. The remaining portion can be syllabified using the previous approach to find maximum probable syllabification. To define how important a prefix or suffix is, 2 entities are defined. %The explanation of these terms would be more intuitive in English. However, they operate exactly same way in Gujarati also.
+
+\subsubsection*{Prefix Score ($S_p$): }
+It is the probability of the sequence of letters being first syllable, given the word is starting with that particular sequence. For example for sequence ($u_1u_2..u_k$):
+
+
+\begin{equation}
+	S_p(u_1u_2...u_k)
+	=
+	\begin{cases}
+		\frac{  N_{fs}( u_1u_2...u_k ) }{ N_{ws}( u_1u_2...u_k ) } & \mbox{if } N_{ws}( u_1u_2...u_k ) \neq 0 \\
+		\frac{ 1 }{ k + 1 } & \mbox{otherwise}
+	\end{cases}
+\end{equation}
+
+\begin{small}
+$N_{fs}( x )$ is number of words with first syllable `x' in training data
+
+$N_{ws}( x )$ is number of words that start with expression `x' in training data
+\end{small}
+
+
+
+\subsubsection*{Suffix Score ($S_s$): }
+It is the probability of the sequence of letters being last syllable, given the word is ending with that particular sequence. For example for sequence ($u_1u_2..u_k$):
+
+\begin{equation}
+	S_p(u_1u_2...u_k)
+	=
+	\begin{cases}
+		\frac{  N_{ls}( u_1u_2...u_k ) }{ N_{we}( u_1u_2...u_k ) } & \mbox{if } N_{we}( u_1u_2...u_k ) \neq 0 \\
+		\frac{ 1 }{ k + 1 } & \mbox{otherwise}
+	\end{cases}
+\end{equation}
+
+\begin{small}
+$N_{ls}( x )$ is number of words with last syllable `x' in training data
+
+$N_{we}( x )$ is number of words that end with expression `x' in training data
+\end{small}
+
+First and last syllables of all words from training data were extracted and prefix and suffix score for them were precomputed respectively. For a sequence of characters if the prefix/suffix score is above a specified threshold, then it is called \textbf{confident prefix/suffix} under that threshold
+
+\subsubsection*{Application of precomputed scores on the Word: }
+ 
+For a given word it is checked whether character sequence of any length starting from first character serve as a confident-prefix or not. Similarly, an attempt is also made to find the confident suffix. When confident prefix/suffix is found in the word, it is taken as first or last syllable respectively and rest of the word is syllabified with previous approach. If multiple confident prefix / suffix are found, one with maximum score should be selected and if none are found, nothing is to be done. Also, if confident prefix marks first split such that the split occurs between consonant and \emph{matra},  then such confident prefix is not chosen because it would contradict our original assumption. The same is followed for confident suffix.
+
+\begin{table}[H]
+\caption{ Finding confident prefix in `{\Guja{બિ ન ઉ પ યો ગી}}'}
+\centering
+\begin{tabular}{SS}\hline
+\noalign{\smallskip}  \bf \begin{small} Prefix Score \end{small} & \bf \begin{small} score > threshold ? \end{small} \\ \noalign{\smallskip}   \hline
+\noalign{\smallskip}  P({\Guja{બિ}}) &  No \\\hline
+\noalign{\smallskip}  \textbf{P({\Guja{બિ ન}})} & \textbf{Yes} \\\hline
+\noalign{\smallskip}  P({\Guja{બિ ન ઉ}}) & No\\\hline
+\noalign{\smallskip}  P({\Guja{બિ ન ઉ પ}}) & No\\\hline
+\noalign{\smallskip}  P({\Guja{બિ ન ઉ પ યો}}) & No \\\hline
+\noalign{\smallskip}  P({\Guja{બિ ન ઉ પ યો ગી}}) & No \\\hline
+\end{tabular}
+\label{table:finding_confident_prefix}
+\end{table}
+
+\section{Evaluation}
+\label{section:evaluation}
+
+To define syllabic break, each character would be tagged as `S' if it marks beginning of the syllable and `F' otherwise. For example, for syllabification (`abc-d-efg'), sequential tags would be a(S), b(F), c(F), d(S), e(S), f(F), s(F). Evaluation of results has been done in 2 ways. Percentage of words syllabified entirely correctly \textbf{(W)}, and percentage of the sequential tags \textbf{(S)} detected correctly.
+
+\begin{table}[H]
+\caption{Evaluation Examples }
+\centering
+\begin{tabular}{XXXLL}\hline
+\noalign{\smallskip}  \bf Actual & \bf Tagged & \bf Check & \bf W & \bf S \\ \noalign{\smallskip}   \hline
+\noalign{\smallskip} ab-cd-ef  (SFSFSF) & abc-d-ef (SFFSSF) & (SFSFSF) (SFFSSF) (\cmark\cmark\xmark\xmark\cmark\cmark) & 0/1 & 4/6\\\hline
+\noalign{\smallskip} ab-cd-ef  (SFSFSF) & ab-cd-ef (SFSFSF) & (SFSFSF) (SFSFSF) (\cmark\cmark\cmark\cmark\cmark\cmark) & 1/1 & 6/6\\\hline
+\end{tabular}
+\label{table:evaluation_examples}
+\end{table}
+
+For each of the experiments, 10 fold cross-validation has been done using corpus of about 14 thousand words in Gujarati.
+
+
+\subsection{Results and Error Analysis}
+\label{subsection:results_and_error_analysis}
+
+Once the training data was built, 10 fold cross validation on 14 thousand words was done using CRF based approach and the approach\footnote{Maximum Probable approach refers to method described in subsection \ref{subsection:predicting_maximum_probable_syllabification} and Prefix/Suffix approach refers to add-on method described in sub-section \ref{subsection:predicting_first_and_last_syllable} } mentioned in Section \ref{section:our_approach}. For prefix-suffix approach maximum result was obtained at threshold (th = 0.95)
+
+\begin{table}[H]
+\caption{ Results } 
+\centering
+\begin{tabular}{FFFS}\hline
+\noalign{\smallskip} \bf & \bf CRF based appraoch & \bf Maximum Probable Approach & \bf Maximum Probable + Prefix/Suffix Approach (th=0.95) \\ \noalign{\smallskip} \hline
+\noalign{\smallskip}  Word Accuracy \textbf{(W)}     & 89.56\% & 88.98\% & 91.89\% \\\hline
+\noalign{\smallskip}  Syllabic Accuracy \textbf{(S)} & 97.58\% & 97.36\% & 98.02\% \\\hline
+\end{tabular}
+\label{table:results}
+\end{table}
+
+A sample of 10 thousand words was taken to analyse prefix-suffix approach. When operated at threshold 0.95, in total of 1963 words confident prefix was detected out of which 1877 (95.6\%) were correct. Similarly, in total of 8602 words confident suffix was detected out of which 8043 (93.5\%) were correct. These values show the accuracies of prefix-suffix algorithm to detect first and last syllables correctly.
+
+On 10 thousand sampled words, when prefix-suffix approach was applied as an add-on to maximum probable approach, some words turned from wrongly tagged to correctly tagged and vice-versa. The following table summarizes the results:
+
+\begin{table}[H]
+\caption{ Change of correctness of predicted syllabification on application of Prefix-Suffix approach on Maximum probable approach (10 thousand words)}
+\centering
+\begin{tabular}{FSS}\hline
+\noalign{\smallskip}  \bf & \bf Prefix detected & \bf Suffix detected \\ \noalign{\smallskip}   \hline
+\noalign{\smallskip}  wrong to right & 86 & 342 \\\hline
+\noalign{\smallskip}  right to wrong & 8  & 7   \\\hline
+\end{tabular}
+\end{table}
+
+To support the claim of prefix-suffix model improving the overall performance, a paired T-test was done. 15 groups, each of 20 random sample words were taken and the number of words tagged correctly prior and later to the application of prefix-suffix model were noted. When this data was passed to one-tailed paired T-test, T-value of 1.709 and P-value of 0.054 was obtained, showing that it can be stated with almost 95 \% confidence that that this improvement is not by chance or randomness.
+
+The proposed system will fail to work when the training data is not enough to disambiguate between situations of keeping or not keeping a syllabic break at some position. This can be due to lack of enough training data or certain exceptions intrinsic to the language itself. For certain words, the assumption made in section 3 does not hold. For example, syllabifications `{\Guja{મોર-િ-યો}}', `{\Guja{ફ-ટક-ી-યુ}}', `{\Guja{હસ-િયો}}' includes a syllabic break between consonant and following \emph{matra} which is very unnatural in training data. Such words invariably fail to get syllabified correctly. However, their small number does not affect the overall performance badly. Approximately 0.67\% words from training data did not follow this assumption.
+
+\section{Conclusion and Future Scopes}
+\label{section:conclusion_and_future_scope}
+
+Gujarati syllabification data has been bootstrapped from a smaller data-set using CRF model. The resulting data was verified and corrected by a linguist. This demonstrates the use of CRF for Gujarati syllabification. A new approach for syllabification is then tested on this data and compared with the CRF results. The proposed model works quite good at word and syllable level accuracies 91.89\% and 98.02\% respectively. These results are very much comparable with CRF results and hence is offered as its alternative approach for Gujarati syllabification which works on simple statistical calculations.
+
+The assumption underlying this approach to syllabification is followed roughly by 99.34\% of 14 thousand words which shows its soundness. This assumption can also be extended to other Indian languages like Hindi, Bengali, Marathi etc. An active work for building of Hindi and Bengali corpus of syllabified words is going on and as a future work the same procedures can be tested and compared on these languages.
+
+\bibliography{main}
+
+
+\end{document}
